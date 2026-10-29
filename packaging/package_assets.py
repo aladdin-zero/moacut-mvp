@@ -6,6 +6,21 @@ from pathlib import Path
 import zipfile
 
 
+def installer_text(folder_name,parts):
+    checks=';'.join("'"+p['name']+"'='"+p['sha256']+"'" for p in parts)
+    names=','.join("'"+p['name']+"'" for p in parts)
+    script="$ErrorActionPreference='Stop'; try { Add-Type -AssemblyName System.IO.Compression.FileSystem; $root=$env:MOACUT_PACKAGE_DIR; $expected=@{"+checks+"}; $names=@("+names+"); "+\
+        "$target=[IO.Path]::Combine($root,'"+folder_name+"'); if([IO.Directory]::Exists($target)){throw 'Target folder already exists. Extract into a new folder.'}; "+\
+        "foreach($name in $names){$file=[IO.Path]::Combine($root,$name); if(![IO.File]::Exists($file)){throw ('Missing ZIP: '+$name)}; "+\
+        "$stream=[IO.File]::OpenRead($file); $sha=[Security.Cryptography.SHA256]::Create(); try {$hash=[BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLower()} finally {$stream.Dispose();$sha.Dispose()}; "+\
+        "if($hash -ne $expected[$name]){throw ('Download hash mismatch: '+$name)}}; "+\
+        "foreach($name in $names){Write-Host ('Extracting '+$name); [IO.Compression.ZipFile]::ExtractToDirectory([IO.Path]::Combine($root,$name),$root)}; "+\
+        "Write-Host 'MOACUT ready.' } catch { Write-Host $_.Exception.Message; exit 1 }"
+    return '@echo off\r\nchcp 65001 >nul\r\nset "MOACUT_PACKAGE_DIR=%~dp0"\r\n'+\
+        'powershell.exe -NoProfile -Command "'+script+'"\r\nif errorlevel 1 (\r\n  pause\r\n  exit /b 1\r\n)\r\n'+\
+        'if "%~1"=="--no-launch" exit /b 0\r\nstart "" "%~dp0'+folder_name+'\\MOACUT.exe"\r\n'
+
+
 def create_assets(folder,destination):
     folder=folder.resolve();destination=destination.resolve()
     destination.mkdir(parents=True,exist_ok=False)
@@ -28,16 +43,7 @@ def create_assets(folder,destination):
         print('Created',target.name,target.stat().st_size,flush=True)
         return {'name':target.name,'bytes':target.stat().st_size,'sha256':digest}
     with ThreadPoolExecutor(max_workers=3) as pool:parts=list(pool.map(write_part,enumerate(groups,1)))
-    checks=';'.join("'"+p['name']+"'='"+p['sha256']+"'" for p in parts)
-    script="$ErrorActionPreference='Stop'; try { $root=$env:MOACUT_PACKAGE_DIR; $expected=@{"+checks+"}; "+\
-        "$target=Join-Path $root '"+folder.name+"'; if(Test-Path -LiteralPath $target){throw 'Target folder already exists. Extract into a new folder.'}; "+\
-        "foreach($name in $expected.Keys){$file=Join-Path $root $name; if(!(Test-Path -LiteralPath $file)){throw ('Missing ZIP: '+$name)}; "+\
-        "if((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLower() -ne $expected[$name]){throw ('Download hash mismatch: '+$name)}}; "+\
-        "foreach($name in ($expected.Keys|Sort-Object)){Write-Host ('Extracting '+$name); Expand-Archive -LiteralPath (Join-Path $root $name) -DestinationPath $root}; "+\
-        "Write-Host 'MOACUT ready.' } catch { Write-Host $_.Exception.Message; exit 1 }"
-    installer='@echo off\r\nchcp 65001 >nul\r\nset "MOACUT_PACKAGE_DIR=%~dp0"\r\n'+\
-        'powershell.exe -NoProfile -Command "'+script+'"\r\nif errorlevel 1 (\r\n  pause\r\n  exit /b 1\r\n)\r\n'+\
-        'if "%~1"=="--no-launch" exit /b 0\r\nstart "" "%~dp0'+folder.name+'\\MOACUT.exe"\r\n'
+    installer=installer_text(folder.name,parts)
     (destination/'Install-MOACUT.cmd').write_text(installer,encoding='utf-8')
     notes='''모아컷 Windows 설치
 
