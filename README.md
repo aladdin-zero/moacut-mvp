@@ -21,10 +21,10 @@ py -3.12 -m venv .venv-ai
 .venv-ai\Scripts\python.exe -m unittest discover -s camera-test -p "test_*.py" -v
 node --test camera-test/test_capture_flow.cjs
 node --check camera-test/web/app.js
-.venv-ai\Scripts\python.exe packaging\build_release.py --output delivery\MOACUT-v0.1.0-Windows-x64 --assets delivery\release-v0.1.0
+.venv-ai\Scripts\python.exe packaging\build_release.py --output delivery\MOACUT-v0.1.0-Windows-x64
 ```
 
-빌더는 기존 환경의 필수 의존성/Windows Python 런타임/고정 OWLv2 모델만 복사하고 실행기를 컴파일합니다. 결과 폴더는 존재하지 않는 새 경로여야 합니다. 압축/검증 후 GitHub Releases에 ZIP을 올리고 SHA256을 함께 제공합니다. 배포 사진/비밀값/설치 캐시는 업로드하지 않습니다.
+빌더는 기존 환경의 필수 의존성/Windows Python 런타임/고정 OWLv2 모델만 복사하고 실행기를 컴파일합니다. 결과 폴더는 존재하지 않는 새 경로여야 합니다. 아래 단일 설치 파일 빌드까지 진행한 뒤 GitHub Releases에 Setup.exe와 SHA256을 제공합니다. 배포 사진/비밀값/설치 캐시는 업로드하지 않습니다.
 
 프로그램 코드의 별도 오픈소스 라이선스는 아직 지정하지 않았습니다. 이 저장소는 비공개 클라이언트 전달용입니다. 제3자 라이선스는 [고지](packaging/THIRD-PARTY-NOTICES.md)와 배포본 licenses 폴더를 따릅니다. Windows 실행 파일은 코드서명되지 않았습니다.
 
