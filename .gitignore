@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv*/
+.deps*/
+.env
+.env.*
+.local/
+models/
+delivery/
+dist/
+build/
+camera-test/captures/
+camera-test/exports/
+*.zip
+*.zip.*
+*.log
