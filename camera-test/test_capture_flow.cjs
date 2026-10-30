@@ -37,3 +37,17 @@ test('resumed guidance ignores photos in trash',()=>{
   assert.equal(guide.index(group),1);
   assert.equal(guide.next(group),'뒤');
 });
+
+test('review all targets only pending branded products with photos that can be saved',()=>{
+ const {reviewableGroupIds}=require('./web/capture-flow.js');
+ const photo={file:'test.jpg',excluded:false};
+ const make=(id,brand,reviewed,photos=[photo])=>({id,brand,reviewed,photos});
+ const groups=[make('nike','NIKE',false),make('empty','',false),make('spaces','   ',false),
+   make('done','NIKE',true),make('deleted','NIKE',false,[{...photo,deleted_at:'today'}]),
+   make('excluded','NIKE',false,[{...photo,excluded:true}]),make('no-photos','NIKE',false,[]),
+   make('adidas','ADIDAS',false,[{...photo,excluded:true},photo])];
+ const original=JSON.stringify(groups);
+ assert.deepEqual(reviewableGroupIds(groups),['nike','adidas']);
+ assert.equal(JSON.stringify(groups),original);
+ assert.deepEqual(reviewableGroupIds([]),[]);
+});

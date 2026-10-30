@@ -26,6 +26,9 @@
     const w=imageWidth*scale,h=imageHeight*scale;
     return {x:(width-w)/2,y:(height-h)/2,width:w,height:h};
   }
-  const api={CaptureTracker,GuideProgress,fitRect};
+  function reviewableGroupIds(groups){
+    return groups.filter(g=>g.brand.trim()&&!g.reviewed&&g.photos.some(p=>!p.excluded&&!p.deleted_at)).map(g=>g.id);
+  }
+  const api={CaptureTracker,GuideProgress,fitRect,reviewableGroupIds};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CaptureFlow=api;
 })(typeof window==='undefined'?{}:window);

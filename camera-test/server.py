@@ -47,8 +47,6 @@ def capture_feedback(state):
         code,title,detail='model_error','상품 인식기를 확인해 주세요',product.get('message','상품 인식 오류로 자동 촬영을 멈췄습니다.')
     elif product.get('state')!='ready':
         code,title,detail='loading','상품 인식기를 준비하고 있습니다','준비가 끝나면 인식을 시작합니다.'
-    elif not state['brand'].strip():
-        code,title,detail='brand','브랜드 입력이 필요합니다','촬영 준비에서 브랜드를 입력하고 적용해 주세요.'
     elif not state['calibrated']:
         code,title,detail='calibration','빈 배경 등록이 필요합니다','상품과 손이 없는 배경을 한 번 등록해 주세요.'
     elif state.get('waiting_for_product_change'):
@@ -206,7 +204,7 @@ class Trial:
                 self.automatic=False
             result = self.state()
             result['today']=today()
-            result.update(application='MOACUT',version='0.1.0')
+            result.update(application='MOACUT',version='0.2.0')
             result['works']=self.works.list(self.data)
             result['can_capture']=self.data['work_date']==today()
             product = {k:v for k,v in (self.product_result or {}).items() if k not in ('gray','frame_time','generation')}
@@ -303,7 +301,7 @@ class Trial:
                         self.event("possible_boundary", group=self.active_group,
                                    reason="desk_absent_1.2s_needs_review")
                         self.persist()
-                    if self.status.get("capture") and allowed and self.data["brand"].strip():
+                    if self.status.get("capture") and allowed:
                         self.capture("auto")
                     if ok_jpeg:
                         self.preview = jpeg.tobytes()
@@ -375,6 +373,17 @@ class Trial:
             raise ValueError("묶음을 찾지 못했습니다.")
         return group
 
+    def selected_groups(self, ids):
+        if not isinstance(ids,list) or not ids or len(ids)>len(self.data['groups']) or any(not isinstance(gid,str) for gid in ids) or len(set(ids))!=len(ids):
+            raise ValueError('작업할 상품을 선택해 주세요.')
+        lookup={g['id']:g for g in self.data['groups']}
+        if any(gid not in lookup for gid in ids):
+            raise ValueError('묶음을 찾지 못했습니다.')
+        groups=[lookup[gid] for gid in ids]
+        if any(not any(not p.get('deleted_at') for p in g['photos']) for g in groups):
+            raise ValueError('사진이 있는 상품만 선택해 주세요.')
+        return groups
+
     def thumbnail(self, name):
         cached = self.thumb_cache.get(name)
         if cached is None:
@@ -406,8 +415,6 @@ class Trial:
                 raise ValueError('날짜가 바뀌었습니다. 오늘 새 작업을 시작해 주세요.')
             if not self.running or self.frame is None:
                 raise ValueError("카메라를 먼저 연결해 주세요.")
-            if not self.data["brand"].strip():
-                raise ValueError("브랜드를 먼저 입력해 주세요.")
             self.observe_product_change(self.gray(self.frame))
             if reason=='auto' and (self.waiting_for_product_change or not self.automatic or not current_product(self.product_result,self.gray(self.frame),time.monotonic(),self.generation)):
                 return None
@@ -416,7 +423,7 @@ class Trial:
                 gid=None
             if gid is None:
                 gid = uuid.uuid4().hex
-                self.data["groups"].append({"id": gid, "brand": self.data["brand"],
+                self.data["groups"].append({"id": gid, "brand": "",
                     "created": stamp(), "reviewed": False, "photos": [],"capture_limit":SHOTS_PER_PRODUCT})
                 self.active_group = gid
                 self.waiting_for_product_change=False
@@ -460,24 +467,34 @@ class Trial:
                 self.data['guide_steps']=[s.strip() for s in steps]
                 self.automatic=False
                 self.event('guide_changed',count=len(steps))
-            elif action == "brand":
-                brand = payload.get("brand", "")
-                if not isinstance(brand, str) or not 1 <= len(brand.strip()) <= 100:
-                    raise ValueError("브랜드를 1~100자로 입력해 주세요.")
-                if brand.strip() != self.data["brand"]:
-                    self.data["brand"] = brand.strip()
-                    self.active_group = None
-                    self.waiting_for_product_change=False
-                    self.detector.last_capture = None
-                    self.event("brand_changed", brand=brand.strip())
+            elif action == "assign_brand":
+                brand=payload.get('brand')
+                ids=payload.get('groups')
+                if not isinstance(brand,str) or len(brand.strip())>100 or any(ord(c)<32 for c in brand):
+                    raise ValueError('브랜드를 100자 이내로 입력해 주세요.')
+                groups=self.selected_groups(ids)
+                previous=[(g,g['brand'],g['reviewed']) for g in groups]
+                brand=brand.strip()
+                for group in groups:
+                    if group['brand']!=brand:
+                        group['brand']=brand
+                        group['reviewed']=False
+                self.event('brands_assigned',groups=ids,brand=brand)
+                try:self.persist()
+                except OSError:
+                    for group,old_brand,reviewed in previous:
+                        group['brand']=old_brand;group['reviewed']=reviewed
+                    self.data['events'].pop()
+                    raise
+                return
             elif action == "automatic":
                 enabled=payload.get('enabled')
                 if type(enabled) is not bool:
                     raise ValueError('촬영 상태가 올바르지 않습니다.')
                 if enabled and self.data['work_date']!=today():
                     raise ValueError('오늘 새 작업을 시작한 뒤 촬영해 주세요.')
-                if enabled and (not self.running or not self.data['brand'].strip() or self.detector.reference is None or self.product_status.get('state')!='ready'):
-                    raise ValueError('카메라·브랜드·빈 책상 등록·상품 검출기 준비를 먼저 완료해 주세요.')
+                if enabled and (not self.running or self.detector.reference is None or self.product_status.get('state')!='ready'):
+                    raise ValueError('카메라·빈 책상 등록·상품 검출기 준비를 먼저 완료해 주세요.')
                 self.automatic=enabled
                 if not self.waiting_for_product_change:
                     self.detector.last_capture=None
@@ -522,8 +539,24 @@ class Trial:
                 self.waiting_for_product_change=False
                 self.detector.last_capture = None
                 self.event("manual_boundary")
+            elif action == "review_groups":
+                groups=self.selected_groups(payload.get('groups'))
+                if any(not g['brand'].strip() for g in groups):
+                    raise ValueError('선택한 상품의 브랜드를 먼저 지정해 주세요.')
+                previous=[(g,g['reviewed']) for g in groups]
+                for group in groups:
+                    group['reviewed']=True
+                self.event('groups_reviewed',groups=[g['id'] for g in groups])
+                try:self.persist()
+                except OSError:
+                    for group,reviewed in previous:group['reviewed']=reviewed
+                    self.data['events'].pop()
+                    raise
+                return
             elif action == "review":
                 group = self.group(payload.get("group"))
+                if not group["reviewed"] and not group["brand"].strip():
+                    raise ValueError("먼저 상품의 브랜드를 지정해 주세요.")
                 group["reviewed"] = not group["reviewed"]
                 self.event("review", group=group["id"], reviewed=group["reviewed"])
             elif action in ('delete_photo','restore_photo','exclude'):
@@ -598,7 +631,7 @@ class Trial:
             work={k:self.data[k] for k in ('work_id','work_date','work_name')}
         result=[]
         for index,group in enumerate(groups,1):
-            if not group['reviewed']:
+            if not group['reviewed'] or not group['brand'].strip():
                 continue
             photos=[p for p in group['photos'] if not p['excluded'] and not p.get('deleted_at')]
             if not photos:
@@ -613,7 +646,7 @@ class Trial:
             result.append({**group,'photos':photos,'folder':f'{brand}/상품_{index:03d}','brand_folder':brand,'number':index,
                 **work})
         if not result:
-            raise ValueError('검토 완료한 묶음이 없습니다. 사진 확인 단계에서 묶음을 확인해 주세요.')
+            raise ValueError('브랜드 지정과 검토를 완료한 묶음이 없습니다. 사진 확인 단계에서 확인해 주세요.')
         return result
 
     def set_export_directory(self,path):
@@ -786,7 +819,9 @@ def handler_for(trial, port):
                 return
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= 16384:
+                # A daily batch can contain hundreds of product IDs.
+                limit=1048576 if urlparse(self.path).path=='/api/action' else 16384
+                if not 0 < length <= limit:
                     raise ValueError("요청 크기가 올바르지 않습니다.")
                 payload = json.loads(self.rfile.read(length))
                 if not isinstance(payload, dict):

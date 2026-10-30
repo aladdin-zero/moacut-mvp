@@ -21,8 +21,8 @@ class ProductGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
             trial=Trial(Path(folder)/'captures')
             trial.running=True;trial.frame=np.zeros((40,60,3),np.uint8)
-            trial.action({'action':'brand','brand':'테스트'})
-            trial.capture('test');trial.action({'action':'review','group':trial.active_group})
+
+            trial.capture('test');trial.action({'action':'assign_brand','groups':[trial.active_group],'brand':'테스트'});trial.action({'action':'review','group':trial.active_group})
             entered=threading.Event();release=threading.Event()
             from shutil import copyfile
             def slow_copy(source,target):
@@ -73,7 +73,7 @@ class ProductGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
             trial=Trial(folder);trial.running=True;trial.automatic=True
             trial.frame=np.zeros((40,60,3),np.uint8)
-            trial.action({'action':'brand','brand':'test'})
+
             trial.product_status={'state':'ready'}
             trial.product_result={'present':True,'seen':2,'generation':trial.generation,
                 'frame_time':time.monotonic(),'gray':trial.gray(trial.frame),
@@ -115,12 +115,12 @@ class LocalFoldersTests(unittest.TestCase):
     def fixture(self,folder):
         trial=Trial(Path(folder)/'captures')
         trial.running=True;trial.frame=np.zeros((40,60,3),np.uint8)
-        trial.action({'action':'brand','brand':'CON.txt'})
+
         for _ in range(2):
             trial.action({'action':'new_group'})
             trial.capture('test');trial.capture('test')
             trial.action({'action':'exclude','group':trial.active_group,'file':trial.data['groups'][-1]['photos'][-1]['file']})
-            trial.action({'action':'review','group':trial.active_group})
+            trial.action({'action':'assign_brand','groups':[trial.active_group],'brand':'CON.txt'});trial.action({'action':'review','group':trial.active_group})
         trial.action({'action':'new_group'});trial.capture('test')
         return trial
 
@@ -165,8 +165,8 @@ class ExportSafetyTests(unittest.TestCase):
     def test_export_hierarchy_exclusion_and_safe_paths(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
             t=Trial(folder);t.running=True;t.frame=np.zeros((40,60,3),np.uint8)
-            t.action({'action':'brand','brand':'../CON/테스트'})
-            photo=t.capture('test');t.action({'action':'review','group':t.active_group})
+
+            photo=t.capture('test');t.action({'action':'assign_brand','groups':[t.active_group],'brand':'../CON/테스트'});t.action({'action':'review','group':t.active_group})
             t.action({'action':'new_group'});t.capture('test')
             with zipfile.ZipFile(BytesIO(t.export())) as archive:
                 self.assertEqual(len(archive.namelist()),2)

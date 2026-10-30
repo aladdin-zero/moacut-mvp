@@ -13,8 +13,8 @@ class FolderSelectionTests(unittest.TestCase):
     def trial(self,folder):
         trial=Trial(Path(folder)/'captures');trial.running=True
         trial.frame=np.zeros((60,80,3),np.uint8)
-        trial.action({'action':'brand','brand':'선택 시험'})
-        trial.capture('manual');trial.action({'action':'review','group':trial.active_group})
+
+        trial.capture('manual');trial.action({'action':'assign_brand','groups':[trial.active_group],'brand':'테스트'});trial.action({'action':'review','group':trial.active_group})
         return trial
 
     def test_selection_persists_and_old_result_opens_after_location_change(self):

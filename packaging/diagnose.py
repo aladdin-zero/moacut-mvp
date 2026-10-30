@@ -19,7 +19,7 @@ def run(force_cpu=False):
     started=time.perf_counter()
     detector=ProductDetector(force_cpu=force_cpu)
     results=[detector.detect(np.full((450,800,3),225,np.uint8)) for _ in range(2)]
-    data={'application':'MOACUT','version':'0.1.0','python':sys.version.split()[0],
+    data={'application':'MOACUT','version':'0.2.0','python':sys.version.split()[0],
         'isolated_python':bool(sys.flags.isolated),'device':detector.device,
         'device_name':results[-1]['device_name'],'fallback_reason':detector.fallback_reason,
         'inference_ms':[r['inference_ms'] for r in results],

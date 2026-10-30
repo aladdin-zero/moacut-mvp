@@ -17,7 +17,7 @@ class DailyWorkTests(unittest.TestCase):
     def make_trial(self, folder):
         trial=Trial(folder)
         trial.running=True;trial.frame=np.zeros((60,80,3),np.uint8)
-        trial.action({'action':'brand','brand':'테스트'})
+
         return trial
 
     def test_legacy_backup_and_photos_survive_migration(self):
@@ -49,16 +49,16 @@ class DailyWorkTests(unittest.TestCase):
             self.assertEqual(trial.data['brand'],'')
             self.assertEqual(trial.data['guide_steps'],['특별한 안내','라벨'])
             self.assertFalse(trial.automatic)
-            trial.action({'action':'brand','brand':'다음 브랜드'})
+
             second=trial.capture('manual')
             self.assertNotEqual(first,second)
-            trial.action({'action':'review','group':trial.active_group})
+            trial.action({'action':'assign_brand','groups':[trial.active_group],'brand':'테스트'});trial.action({'action':'review','group':trial.active_group})
             self.assertEqual([p['file'] for g in trial.export_selection() for p in g['photos']],[second])
             trial.switch_work({'mode':'continue','work_id':old})
             self.assertEqual(trial.active_group,gid)
             self.assertEqual([p['file'] for p in trial.group(gid)['photos']],[first])
             self.assertEqual(trial.export_directory,chosen.resolve())
-            trial.action({'action':'review','group':gid})
+            trial.action({'action':'assign_brand','groups':[gid],'brand':'테스트'});trial.action({'action':'review','group':gid})
             self.assertEqual([p['file'] for g in trial.export_selection() for p in g['photos']],[first])
             restored=Trial(folder)
             self.assertEqual(restored.active_group,gid)
@@ -69,7 +69,7 @@ class DailyWorkTests(unittest.TestCase):
     def test_day_change_stops_both_capture_modes_but_keeps_review_export(self):
         with tempfile.TemporaryDirectory() as folder:
             trial=self.make_trial(folder);trial.capture('manual');gid=trial.active_group
-            trial.action({'action':'review','group':gid});trial.automatic=True
+            trial.action({'action':'assign_brand','groups':[gid],'brand':'테스트'});trial.action({'action':'review','group':gid});trial.automatic=True
             with patch('server.today',return_value='2099-01-02'):
                 self.assertFalse(trial.public_state()['can_capture'])
                 self.assertFalse(trial.automatic)
@@ -87,10 +87,10 @@ class DailyWorkTests(unittest.TestCase):
             trial=self.make_trial(folder);names=[trial.capture('manual') for _ in range(4)]
             gid=trial.data['groups'][0]['id']
             before={name:hashlib.sha256((Path(folder)/name).read_bytes()).hexdigest() for name in names}
-            trial.action({'action':'review','group':gid})
+            trial.action({'action':'assign_brand','groups':[gid],'brand':'테스트'});trial.action({'action':'review','group':gid})
             trial.action({'action':'delete_photo','group':gid,'file':names[1]})
             self.assertFalse(trial.group(gid)['reviewed'])
-            trial.action({'action':'review','group':gid})
+            trial.action({'action':'assign_brand','groups':[gid],'brand':'테스트'});trial.action({'action':'review','group':gid})
             with zipfile.ZipFile(BytesIO(trial.export())) as archive:
                 exported=json.loads(archive.read('manifest.json'))[0]
                 self.assertEqual([p['file'] for p in exported['photos']],[names[0],names[2],names[3]])

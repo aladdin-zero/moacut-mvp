@@ -13,7 +13,7 @@ class FourShotTests(unittest.TestCase):
     def make_trial(self,folder):
         trial=Trial(folder);trial.running=True
         trial.frame=np.zeros((100,160,3),np.uint8)
-        trial.action({'action':'brand','brand':'test'})
+
         return trial
 
     def test_saved_four_four_one_and_no_automatic_review(self):

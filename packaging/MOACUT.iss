@@ -2,13 +2,13 @@
   #error SourceRoot must point to the verified portable build
 #endif
 #ifndef ReleaseOutput
-  #define ReleaseOutput "..\delivery\setup-v0.1.1"
+  #define ReleaseOutput "..\delivery\setup-v0.2.0"
 #endif
 
 [Setup]
 AppId={{529AACBE-D7AB-4DE1-8E24-2D58BFA3B78C}
 AppName=모아컷
-AppVersion=0.1.1
+AppVersion=0.2.0
 AppPublisher=MOACUT
 DefaultDirName={localappdata}\Programs\MOACUT
 DefaultGroupName=모아컷
@@ -26,7 +26,7 @@ LZMADictionarySize=262144
 LZMANumBlockThreads=2
 LZMAUseSeparateProcess=yes
 OutputDir={#ReleaseOutput}
-OutputBaseFilename=MOACUT-Setup-0.1.1-Windows-x64
+OutputBaseFilename=MOACUT-Setup-0.2.0-Windows-x64
 UninstallDisplayIcon={app}\MOACUT.exe
 UninstallDisplayName=모아컷
 UninstallFilesDir={app}\uninstall

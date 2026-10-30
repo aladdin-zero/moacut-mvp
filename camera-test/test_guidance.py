@@ -47,7 +47,7 @@ class GuidanceTests(unittest.TestCase):
     def test_configurable_guide_persists_without_changing_photos_or_enforcing_six(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
             trial=Trial(folder);trial.running=True;trial.frame=np.zeros((40,60,3),np.uint8)
-            trial.action({'action':'brand','brand':'test'})
+
             for _ in range(7):trial.capture('manual')
             trial.action({'action':'guide','steps':[' 사용자가 정한 내용 ','특징 한 번 더']})
             restored=Trial(folder)

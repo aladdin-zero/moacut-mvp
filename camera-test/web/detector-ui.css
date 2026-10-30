@@ -5,3 +5,34 @@
 .work-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px;padding:16px 22px;background:#fff;border:1px solid var(--line);border-radius:16px}.work-bar>div{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.work-bar small{color:var(--muted)}.guide-rows{display:grid;gap:10px;margin:14px 0}.guide-row{display:grid;grid-template-columns:140px 1fr auto;gap:8px;align-items:center}.guide-row input,.guide-row select{min-width:0;margin:0}select{font:inherit;color:inherit;border:1px solid #d7deeb;border-radius:9px;padding:12px;background:#fff;max-width:100%}.guide-row button{color:#ac3434}.work-choice{border-top:1px solid var(--line);padding:16px 0}.work-choice select,.work-choice input{width:100%;box-sizing:border-box}#workDialog{width:min(620px,90vw);max-height:90vh;overflow:auto;border:0;border-radius:20px;padding:28px}#workInfo{display:block}#trashPanel{margin-top:24px}#trashPanel summary{font-weight:700;cursor:pointer}#trashPhotos{margin-top:20px}.photo button{margin-top:5px}#workError:empty{display:none}@media(max-width:650px){.work-bar{align-items:flex-start;flex-direction:column}.guide-row{grid-template-columns:1fr auto}.guide-row select{grid-column:1/-1}}
 .guide-row input{font:inherit;border:1px solid #d7deeb;border-radius:9px;padding:12px;background:#f9faff;width:100%;box-sizing:border-box}.guide-row input:focus,.guide-row select:focus{outline:2px solid #9db2ff;outline-offset:1px}
 .work-choice input{font:inherit;border:1px solid #d7deeb;border-radius:9px;padding:12px;background:#f9faff}.work-choice input:focus{outline:2px solid #9db2ff;outline-offset:1px}
+
+/* Brand selection stays in review, so mixed-brand shooting needs no input. */
+.brand-assignment{margin:18px 0 24px;border:1px solid #a9c9fa;background:#f3f7ff}
+.brand-assignment .section-head{align-items:center;gap:16px;flex-wrap:wrap}
+.brand-selection-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand-selection-tools .check,.group-select{display:flex;align-items:center;gap:8px;margin:0;white-space:nowrap}
+.brand-assignment input[type=checkbox],.group-select input{width:20px;height:20px;accent-color:#2563eb}
+.group-selected{outline:3px solid #4c8bf5;outline-offset:2px}
+.group-select{padding:8px 10px;border-radius:10px;background:#edf3ff;cursor:pointer}
+#clearBrands{margin-top:8px}
+#brandSelectionCount{margin:6px 0 0;font-weight:700;color:#2457a8}
+@media(max-width:650px){.brand-assignment .input-row{flex-direction:column}.brand-assignment .input-row button{width:100%}.brand-selection-tools{gap:8px}.group-head{gap:10px;flex-wrap:wrap}}
+
+.review-workspace{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start;margin-top:18px}
+.review-products{min-width:0}
+.review-workspace>.brand-assignment{position:sticky;top:16px;max-height:calc(100dvh - 32px);overflow-y:auto;margin:0;padding:22px}
+.brand-assignment .section-head{display:block;margin-bottom:16px}
+.brand-assignment .brand-selection-tools{display:grid;grid-template-columns:1fr 1fr;margin-top:16px;gap:8px}
+.brand-assignment .brand-selection-tools .check{grid-column:1/-1}
+.brand-assignment .brand-selection-tools button{padding:10px 8px;font-size:11px}
+.brand-assignment .input-row{display:flex;flex-direction:column;align-items:stretch}
+.brand-assignment .input-row input{width:100%;min-width:0;flex-basis:auto}
+.brand-assignment h3{font-size:14px;margin:16px 0 8px}
+.brand-assignment .hint{color:#596a84}
+#saveBlocker{padding:15px;border:1px solid #ecc479;border-radius:10px;background:#fff7e8;color:#765012;font-size:13px;line-height:1.8}
+#saveStatus{overflow-wrap:anywhere}.save-success{color:#147a50;font-weight:700}
+@media(max-width:900px){.review-workspace{grid-template-columns:1fr}.review-workspace>.brand-assignment{position:static;max-height:none;overflow:visible}.brand-assignment .brand-selection-tools{grid-template-columns:1fr 1fr}.brand-assignment .input-row{flex-direction:row;flex-wrap:wrap}}
+
+#reviewNextDialog{width:min(480px,92vw);border:0;border-radius:16px;padding:28px;box-shadow:0 20px 80px #12244440}
+#reviewNextDialog::backdrop{background:#14243a66}
+.review-next-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:24px}

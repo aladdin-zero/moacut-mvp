@@ -44,7 +44,7 @@ class Launcher {
             try {
                 string root=AppDomain.CurrentDomain.BaseDirectory;
                 string python=Path.Combine(root,"runtime","python.exe"), server=Path.Combine(root,"app","server.py");
-                if(!File.Exists(python)||!File.Exists(server))throw new IOException("ZIP 전체를 먼저 압축 해제한 뒤 MOACUT.exe를 실행해 주세요.");
+                if(!File.Exists(python)||!File.Exists(server))throw new IOException("프로그램 파일이 누락되었습니다. 모아컷 설치 파일을 다시 실행해 주세요.");
                 var reservation=new TcpListener(IPAddress.Loopback,0);reservation.Start();
                 int port=((IPEndPoint)reservation.LocalEndpoint).Port;reservation.Stop();url="http://127.0.0.1:"+port;
                 var start=new ProcessStartInfo(python,"-B -X utf8 "+Quote(server)+" --port "+port+" --data "+Quote(Path.Combine(data,"captures")));

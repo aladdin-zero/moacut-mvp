@@ -15,7 +15,7 @@ sys.path.insert(0,str(ROOT/'.deps-camera'))
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 
-VERSION='0.1.0'
+VERSION='0.2.0'
 APP_FILES=['server.py','detector.py','product_detector.py','folder_picker.py','voice_guidance.py','work_sessions.py']
 REQUIRED=['torch','torchvision','transformers','opencv-python-headless','scipy','pillow','numpy']
 
@@ -81,6 +81,11 @@ def build(output):
     (output/'환경점검.cmd').write_text('@echo off\r\nchcp 65001 >nul\r\n"%~dp0runtime\\python.exe" -B -X utf8 "%~dp0app\\diagnose.py"\r\npause\r\n',encoding='utf-8')
     (output/'build-info.json').write_text(json.dumps({'application':'MOACUT','version':VERSION,'platform':'Windows-x64',
         'python':sys.version.split()[0],'packages':records,'excluded_build_bytes':skipped},ensure_ascii=False,indent=2),encoding='utf-8')
+    hashes={}
+    for file in sorted(output.rglob('*')):
+        if file.is_file():
+            with file.open('rb') as stream:hashes[file.relative_to(output).as_posix()]=hashlib.file_digest(stream,'sha256').hexdigest()
+    (output/'FILES-SHA256.json').write_text(json.dumps(hashes,ensure_ascii=False,indent=2),encoding='utf-8')
     print('Release ready:',output,flush=True)
 
 

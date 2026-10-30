@@ -99,7 +99,7 @@ class StorageTests(unittest.TestCase):
         self.trial = Trial(self.folder.name)
         self.trial.running = True
         self.trial.frame = np.zeros((60, 80, 3), dtype=np.uint8)
-        self.trial.action({"action": "brand", "brand": "테스트"})
+
 
     def tearDown(self):
         self.folder.cleanup()
@@ -110,14 +110,14 @@ class StorageTests(unittest.TestCase):
         gid = t.active_group
         with self.assertRaises(ValueError):
             t.export()
-        t.action({"action": "review", "group": gid})
+        t.action({'action':'assign_brand','groups':[gid],'brand':'테스트'});t.action({"action": "review", "group": gid})
         self.assertEqual(len(zipfile.ZipFile(BytesIO(t.export())).namelist()), 4)
         t.action({"action": "split", "group": gid, "file": files[1]})
         self.assertEqual([len(g["photos"]) for g in t.data["groups"]], [1, 2])
         self.assertTrue(all(not g["reviewed"] for g in t.data["groups"]))
         t.action({"action": "merge", "group": t.data["groups"][1]["id"]})
         t.action({"action": "exclude", "group": gid, "file": files[0]})
-        t.action({"action": "review", "group": gid})
+        t.action({'action':'assign_brand','groups':[gid],'brand':'테스트'});t.action({"action": "review", "group": gid})
         with zipfile.ZipFile(BytesIO(t.export())) as archive:
             names=archive.namelist()
             manifest=json.loads(archive.read('manifest.json'))
@@ -129,22 +129,23 @@ class StorageTests(unittest.TestCase):
         # Daily work continuation now restores an unfinished product too.
         self.assertEqual(restored.active_group,t.active_group)
 
-    def test_brand_change_new_draft_and_validation(self):
-        t = self.trial
-        t.capture("test")
-        t.action({"action": "brand", "brand": "다른 브랜드"})
-        t.capture("test")
-        self.assertEqual(len(t.data["groups"]), 2)
-        with self.assertRaises(ValueError):
-            t.action({"action": "merge", "group": t.active_group})
-        for roi in ([0, 0, .01, 1], [0, 0, 2, 1], [0, "a", 1, 1], [0, 0, float('nan'), 1]):
-            with self.assertRaises(ValueError):
-                t.action({"action": "calibrate", "roi": roi})
+    def test_brand_assignment_keeps_product_and_validation(self):
+        t=self.trial
+        t.capture('test');first=t.active_group
+        t.action({'action':'assign_brand','groups':[first],'brand':'다른 브랜드'})
+        t.capture('test')
+        self.assertEqual(t.active_group,first)
+        self.assertEqual(len(t.group(first)['photos']),2)
+        t.action({'action':'new_group'});t.capture('test')
+        self.assertEqual(t.group(t.active_group)['brand'],'')
+        with self.assertRaises(ValueError):t.action({'action':'merge','group':t.active_group})
+        for roi in ([0,0,.01,1],[0,0,2,1],[0,'a',1,1],[0,0,float('nan'),1]):
+            with self.assertRaises(ValueError):t.action({'action':'calibrate','roi':roi})
 
     def test_new_capture_invalidates_review(self):
         t = self.trial
         t.capture("test")
-        t.action({"action": "review", "group": t.active_group})
+        t.action({'action':'assign_brand','groups':[t.active_group],'brand':'테스트'});t.action({"action": "review", "group": t.active_group})
         t.capture("test")
         self.assertFalse(t.group(t.active_group)["reviewed"])
         self.assertEqual(len(list(Path(self.folder.name).glob('*.jpg'))), 2)
@@ -234,8 +235,8 @@ class HTTPTests(unittest.TestCase):
                 self.assertEqual(request('POST', '/api/drive/save', '{}', headers)[0], 400)
                 self.assertEqual(request('GET', '/oauth/callback')[0], 404)
                 self.assertEqual(request('POST', '/api/action', '[]', headers)[0], 400)
-                self.assertEqual(request('POST', '/api/action', '{"action":"brand","brand":"demo"}', headers)[0], 200)
-                self.assertEqual(Trial(directory).data['brand'], 'demo')
+                self.assertEqual(request('POST', '/api/action', '{"action":"guide","steps":["demo"]}', headers)[0], 200)
+                self.assertEqual(Trial(directory).data['guide_steps'], ['demo'])
             finally:
                 server.shutdown()
                 server.server_close()

@@ -13,11 +13,11 @@ def build(source,compiler,output):
     output.mkdir(parents=True,exist_ok=False)
     script=Path(__file__).with_name('MOACUT.iss')
     subprocess.run([str(compiler),'/DSourceRoot='+str(source),'/DReleaseOutput='+str(output),str(script)],check=True)
-    installer=output/'MOACUT-Setup-0.1.1-Windows-x64.exe'
+    installer=output/'MOACUT-Setup-0.2.0-Windows-x64.exe'
     size=installer.stat().st_size
     if size>=2*1024**3:raise ValueError('Installer exceeds the GitHub 2 GiB asset limit.')
     with installer.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
-    result={'name':installer.name,'bytes':size,'sha256':digest,'installer_version':'0.1.1',
+    result={'name':installer.name,'bytes':size,'sha256':digest,'installer_version':'0.2.0',
         'application_version':json.loads((source/'build-info.json').read_text(encoding='utf-8'))['version']}
     (output/'setup-info.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     (output/'SHA256SUMS.txt').write_text(digest+'  '+installer.name+'\n',encoding='utf-8')
